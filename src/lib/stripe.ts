@@ -1,14 +1,14 @@
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-07-29.dahlia',
 })
 
-export async function createPaymentLink(proposalId: string, amount: number, description: string) {
-  if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'sk_test_dummy') {
-    return { url: '#demo', demo: true }
-  }
-
+export async function createPaymentLink(
+  proposalId: string,
+  amountInCents: number,
+  description?: string
+) {
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: [
@@ -16,17 +16,17 @@ export async function createPaymentLink(proposalId: string, amount: number, desc
         price_data: {
           currency: 'usd',
           product_data: {
-            name: description || 'Proposal Deposit',
+            name: description || 'Project Deposit',
           },
-          unit_amount: amount,
+          unit_amount: amountInCents,
         },
         quantity: 1,
       },
     ],
     mode: 'payment',
-    success_url: `https://proposal-generator-16a761u2j-prop-gen1.vercel.app/proposal/${proposalId}?paid=true`,
-    cancel_url: `https://proposal-generator-16a761u2j-prop-gen1.vercel.app/proposal/${proposalId}`,
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/proposal/${proposalId}?paid=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/proposal/${proposalId}?canceled=true`,
   })
 
-  return { url: session.url || '#demo', demo: false }
+  return { url: session.url!, demo: false }
 }
