@@ -1,27 +1,46 @@
 export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
-import { createPaymentLink } from '@/lib/stripe'
-import { mockUpdate } from '@/lib/db'
+import Stripe from 'stripe'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2026-07-29.dahlia',
+})
 
 export async function POST(req: Request) {
   try {
     const { proposalId, amount, description } = await req.json()
 
+    console.log('DEBUG: Received request:', { proposalId, amount, description })
+
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
     }
 
-    const { url } = await createPaymentLink(proposalId, amount * 100, description)
-
-    await mockUpdate('proposals', proposalId, {
-      stripe_payment_link: url,
-      status: 'sent',
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: description || 'Project Deposit',
+            },
+            unit_amount: amount * 100,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/proposal/${proposalId}?paid=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/proposal/${proposalId}?canceled=true`,
     })
 
-    return NextResponse.json({ url })
+    console.log('DEBUG: Stripe session URL:', session.url)
+
+    return NextResponse.json({ url: session.url })
   } catch (err: any) {
-    console.error('Stripe error:', err)
+    console.error('DEBUG: Stripe error:', err.message)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
