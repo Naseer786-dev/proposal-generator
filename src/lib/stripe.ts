@@ -9,6 +9,8 @@ export async function createPaymentLink(
   amountInCents: number,
   description?: string
 ) {
+  console.log('Creating Stripe session for:', { proposalId, amountInCents, description })
+  
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: [
@@ -28,5 +30,6 @@ export async function createPaymentLink(
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/proposal/${proposalId}?canceled=true`,
   })
 
+  console.log('Stripe session created:', session.url)
   return { url: session.url!, demo: false }
 }
