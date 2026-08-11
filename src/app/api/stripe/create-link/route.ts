@@ -1,27 +1,20 @@
 export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
-import { createPaymentLink } from '@/lib/stripe'
-import { mockUpdate } from '@/lib/db'
 
 export async function POST(req: Request) {
   try {
     const { proposalId, amount, description } = await req.json()
-
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
-    }
-
-    const { url } = await createPaymentLink(proposalId, amount, description)
-
-    await mockUpdate('proposals', proposalId, {
-      stripe_payment_link: url,
-      status: 'sent',
+    
+    console.log('DEBUG: API called with:', { proposalId, amount, description })
+    
+    // Return a test URL to see if this code is even running
+    return NextResponse.json({ 
+      url: `https://example.com/test-stripe-${proposalId}`,
+      debug: 'This is the real API route running'
     })
-
-    return NextResponse.json({ url })
   } catch (err: any) {
-    console.error('Stripe error:', err)
+    console.error('DEBUG ERROR:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
