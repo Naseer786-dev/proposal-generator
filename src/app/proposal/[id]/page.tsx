@@ -35,7 +35,7 @@ export default function ProposalView() {
         }),
       })
       const data = await res.json()
-      if (data.url) window.location.href = data.url
+alert('API Response: ' + JSON.stringify(data))
     } catch (e) {
       alert("Payment link creation failed. Check console.")
     } finally {
